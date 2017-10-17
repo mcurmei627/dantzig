@@ -12,11 +12,9 @@ Install YALMIP toolbox by following the instructions [here](https://yalmip.githu
 ### MOSEK solver
 Install MOSEK solver by following the instructions [here](https://www.mosek.com/downloads/).
 
-After adding MOSEK to the MATLAB path, check the installation by running **yalmiptest**.
+After adding MOSEK to the MATLAB path, check the installation by running **yalmiptest.
 You should see something like that as part of the oiutput:
-~~~~
 |         MOSEK|             SOCP|       found|
 |         MOSEK|            LP/QP|       found|
 |         MOSEK|              SDP|       found|
 |         MOSEK|        GEOMETRIC|       found|
-~~~~

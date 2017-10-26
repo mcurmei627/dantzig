@@ -1,7 +1,8 @@
-function p = monotone_regression(degree,features,response,monotone_profile)
+function [p,x] = monotone_regression(degree,features,response,monotone_profile)
 %% Description 
 % Outputs
 %   p := decision polynomial
+%   x := argument of p
 % Inputs
 %   degree := the degree  of the decision polynomial 
 %   features := feature variable data used for training
@@ -11,7 +12,7 @@ function p = monotone_regression(degree,features,response,monotone_profile)
 
 %% Clear up the environment
 % This is an important step for improving performance
-yalmip(clear);
+yalmip('clear');
 %% PROBLEM SETUP: Define the box
 % find the superior and inferior bounds 
 % (currently we infer the bounds based on the full datasets, 
@@ -31,7 +32,7 @@ x=sdpvar(1,k);
 % p is the polynomial
 % c is the array of the cofficients of the polynomial p
 % v is the array of monomials
-[p,c,v] = polynomial(x,d);
+[p,c,v] = polynomial(x,degree);
 
 %% PROBLEM SETUP: Write the objective
 % currently computing the objective is the biggest computational bottleneck
@@ -45,27 +46,21 @@ h = diff_bulk*diff_bulk';
 %% PROBLEM SETUP: Define the decision variables used in the constraints
 
 % Create the monomials used in the constraints
-monomials = monolist(x, d-2); % d-2 because the other decision polynomials have degree d-2
+monomials = monolist(x, degree-2); % degree-2 because the other decision polynomials have degree degreemono-2
 
-% Define the coefficients of the 2 matrices of polynomials
-coef_sup = sdpvar(k*k, length(monomials));
-coef_inf = sdpvar(k*k, length(monomials));
+% Define the coefficients of the matricx of helper polynomials
+coef_help = sdpvar(k*k, length(monomials));
 
-% Create the two matrices of polynomials 
-Q_inf = coef_sup*monomials;
-Q_sup = coef_inf*monomials;
-
-Q_inf = reshape(Q_inf, k, k, []);
-Q_sup = reshape(Q_sup, k, k, []);
-
-% [SUGGESTION] run >> sdisplay(Q_inf) to see what it looks like
+% Create the matrix of helper polynomials 
+Q_help = coef_help*monomials;
+Q_help = reshape(Q_help, k, k, []);
 
 %% PROBLEM SETUP: Write the constraints
-F = [sos(Q_inf), sos(Q_sup)];
-F = F+[sos(transpose(jacobian(p,x)).*monoton_sign - Q_inf*transpose(x-inf_bound) - Q_sup*transpose(sup_bound-x))];
+F = [sos(Q_help)];
+F = F+[sos(transpose(jacobian(p,x)).*monotone_profile -  Q_help*transpose((x-inf_bound).*(sup_bound-x)))];
 
 %% SOS OPTIMIZATION: Fit the desired polynomial
 options = sdpsettings('verbose',2, 'solver', 'mosek');
-all_coef = [c;reshape(coef_sup, k*k*length(monomials),1,[]); reshape(coef_inf, k*k*length(monomials),1,[])];
+all_coef = [c;reshape(coef_help, k*k*length(monomials),1,[])];
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
 end

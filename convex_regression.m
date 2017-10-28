@@ -83,4 +83,8 @@ options = sdpsettings('verbose',2, 'solver', 'mosek');
 % The coefficients are the decision variables, putting them all in an array
 all_coef = [c;reshape(coef_help, k*length(monomials),1,[])];
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
+
+%% Display message
+msg = "Convex regression for polynomial of degree "+degree+" complete.";
+disp(msg);
 end

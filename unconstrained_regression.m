@@ -18,4 +18,7 @@ mdl_spec = strcat('poly', repmat(int2str(degree),1, k));
 
 %%
 mdl = fitlm(features,response',mdl_spec);
+%% Display message
+msg = "Unconstrained regression for polynomial of degree "+degree+" complete.";
+disp(msg);
 end

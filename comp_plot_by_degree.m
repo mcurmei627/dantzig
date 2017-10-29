@@ -72,7 +72,8 @@ plot(d_min:d_max, mse_train_uncs,':', 'LineWidth', 2)
 plot(d_min:d_max, mse_test_uncs,'-', 'LineWidth', 2)
 lgd = legend(strcat(algo_abr, ' train'), strcat(algo_abr, ' test'),'UPR train','UPR test');
 lgd.Title.String = strcat(char(949), ' = ', num2str(eps));
-xlabel([char(949), '=', num2str(eps)]); % char(949) is epsilon
+set(lgd, 'Location', 'Best')
+xlabel('Degree of the polynomial'); % char(949) is epsilon
 ylabel('MSE')
 set(gca,'xtick', [d_min:1:d_max]); 
 title(['Comparison of MSE for ', char(949), ' = ', num2str(eps)]); 

@@ -1,4 +1,4 @@
-function [p,x] = convex_regression(degree,features,response,convex_sign)
+function [p,x] = monotone_convex_regression(degree,features,response,monotone_profile,convex_sign)
 %% Description 
 % Outputs
 %   p := decision polynomial
@@ -7,6 +7,8 @@ function [p,x] = convex_regression(degree,features,response,convex_sign)
 %   degree := the degree  of the decision polynomial 
 %   features := feature variable data used for training
 %   response := response variable used for training
+%   monotone_profile := the vector of 0,1,-1, describing the monotonicity
+%                       relationship between each feature and the response
 %   convex_sign := 1 if convex, -1 if concave
 
 %% Clear up the environment
@@ -62,31 +64,49 @@ h = diff_bulk*diff_bulk'; % <- h is the minimization objective, the sum of
 
 %% PROBLEM SETUP: Define the decision variables used in the constraints
 
-% Create helper free variable
+%% Monotone
+% Create the monomials of the helper polynomials used in the 
+% MONOTONE constraints
+m_monomials = monolist(x, degree-2);
+
+% Define the coefficients of the matrix of helper polynomials
+% for the MONOTONE constraints
+m_coef_help = sdpvar(k*k, length(m_monomials));
+
+% Create the matrix of helper polynomials 
+m_Q_help = m_coef_help*m_monomials;
+m_Q_help = reshape(m_Q_help, k, k, []);
+
+%% Convex
+% Create helper free variable for the CONVEX constraints
 y=sdpvar(1,k);
 
 % Create the monomials of the helper polynomials used in the constraints
 mono_degree = cat(2, repelem(degree-2, k), repelem(2, k));
 % (the max degree associated with the helper variable is 2)
-monomials = monolist([x y], mono_degree);
+c_monomials = monolist([x y], mono_degree);
 
 % Define the coefficients of the array of helper polynomials
-coef_help = sdpvar(k, length(monomials));
+% for the CONVEX constraint
+c_coef_help = sdpvar(k, length(c_monomials));
 
 % Create an array of helper polynomials 
-Q_help = coef_help*monomials;
+c_Q_help = c_coef_help*c_monomials;
 
 %% PROBLEM SETUP: Write the constraints
-F = [sos(Q_help)];
-F = F+[sos(y*hessian(p,x)*transpose(y).*convex_sign-(x-inf_bound).*(sup_bound-x)*Q_help)];
+F = [sos(m_Q_help), sos(m_Q_help)];
+% Add monotonicity constraints
+F = F+[sos(transpose(jacobian(p,x)).*monotone_profile - m_Q_help*transpose((x-inf_bound).*(sup_bound-x)))];
+% Add convexity constraints
+F = F+[sos(y*hessian(p,x)*transpose(y).*convex_sign-(x-inf_bound).*(sup_bound-x)*c_Q_help)];
 
 %% SOS OPTIMIZATION: Fit the desired polynomial
 options = sdpsettings('verbose',2, 'solver', 'mosek');
 % The coefficients are the decision variables, putting them all in an array
-all_coef = [c;reshape(coef_help, k*length(monomials),1,[])];
+all_coef = [c;reshape(c_coef_help, k*length(c_monomials),1,[]);reshape(m_coef_help, k*k*length(m_monomials),1,[])];
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
 
 %% Display message
-msg = "Convex regression for polynomial of degree "+degree+" complete.";
+msg = "Monotone-convex regression for polynomial of degree "+degree+" complete.";
 disp(msg);
 end

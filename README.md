@@ -3,7 +3,7 @@
 ## Prerequisites 
 
 ### MATLAB R2017b
-This project was developed in MATLAB R2017b. We do not guarantee the forward
+This project was developed in MATLAB R2019a. We do not guarantee the forward
 or backward compatibility to any other versions.
 
 ### YALMIP toolbox
@@ -15,12 +15,16 @@ Install MOSEK solver by following the instructions [here](https://www.mosek.com/
 After adding MOSEK to the MATLAB path, check the installation by running **yalmiptest**.
 You should see something like that as part of the output:
 ~~~~
-|         MOSEK|             SOCP|       found|
-|         MOSEK|            LP/QP|       found|
-|         MOSEK|              SDP|       found|
-|         MOSEK|        GEOMETRIC|       found|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+|                   Test|   Solution|                 Solver message|
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+|   Core functionalities|        N/A|   Successfully solved (YALMIP)|
+|                     LP|    Correct|    Successfully solved (MOSEK)|
+|                     LP|    Correct|    Successfully solved (MOSEK)|
+|                     QP|    Correct|    Successfully solved (MOSEK)|
+|                     QP|    Correct|    Successfully solved (MOSEK)|
 ~~~~
-As a note, make sure to download the MOSEK license file.
+As a note, make sure to download the MOSEK license file and place it in the `\mosek\` folder.
 
 ## Monotone Regression
 [Add reference to monotone_regression.m file]

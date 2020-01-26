@@ -1,4 +1,5 @@
-function [p,x] = monotone_regression(degree,features,response,monotone_profile)
+function [p,x] = ...
+    bounded_derivative_regression(degree,features,response,l_bound,u_bound)
 %% Description 
 % Outputs
 %   p := decision polynomial
@@ -7,8 +8,10 @@ function [p,x] = monotone_regression(degree,features,response,monotone_profile)
 %   degree := the degree  of the decision polynomial 
 %   features := feature variable data used for training
 %   response := response variable used for training
-%   monotone_profile := the vector of 0,1,-1, describing the monotonicity
-%                       relationship between each feature and the response
+%   l_bound := real valued vector such that each entry correcponds to the
+%              lower bound on the partial derivative
+%   u_bound := real valued vector such that each entry correcponds to the
+%              upper bound on the partial derivative
 
 %% Clear up the environment
 % This is an important step for improving performance
@@ -19,8 +22,8 @@ yalmip('clear');
 % in actual applications rescalling is necessary due to 
 % numerical problems
 tol = 0.001;
-inf_bound = min(features) - tol;
-sup_bound = max(features) + tol;
+inf_domain = min(features) - tol;
+sup_domain = max(features) + tol;
 
 %% PROBLEM SETUP: Define the parameters and decision variables
 
@@ -48,23 +51,27 @@ h = diff_bulk*diff_bulk';
 % Create the monomials used in the constraints
 monomials = monolist(x, degree-2); % degree-2 because the other decision polynomials have degree degreemono-2
 
-% Define the coefficients of the matrix of helper polynomials
-coef_help = sdpvar(k*k, length(monomials));
+% Define the coefficients of the matrices of helper polynomials
+l_coef_help = sdpvar(k*k, length(monomials));
+u_coef_help = sdpvar(k*k, length(monomials));
 
 % Create the matrix of helper polynomials 
-Q_help = coef_help*monomials;
-Q_help = reshape(Q_help, k, k, []);
+l_Q_help = l_coef_help*monomials;
+l_Q_help = reshape(l_Q_help, k, k, []);
+
+u_Q_help = u_coef_help*monomials;
+u_Q_help = reshape(u_Q_help, k, k, []);
 
 %% PROBLEM SETUP: Write the constraints
-F = [sos(Q_help)];
-F = F+[sos(transpose(jacobian(p,x)).*monotone_profile -  Q_help*transpose((x-inf_bound).*(sup_bound-x)))];
-
+F = [sos(l_Q_help), sos(u_Q_help)];
+F = F+[sos(transpose(jacobian(p,x))- l_bound - l_Q_help*transpose((x-inf_domain).*(sup_domain-x)))];
+F = F+[sos(u_bound-transpose(jacobian(p,x))- u_Q_help*transpose((x-inf_domain).*(sup_domain-x)))];
 %% SOS OPTIMIZATION: Fit the desired polynomial
 options = sdpsettings('verbose',2, 'solver', 'mosek');
-all_coef = [c;reshape(coef_help, k*k*length(monomials),1,[])];
+all_coef = [c;reshape(l_coef_help, k*k*length(monomials),1,[]);reshape(u_coef_help, k*k*length(monomials),1,[])];
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
 
 %% Display message
-msg = "Monotone regression for polynomial of degree "+degree+" complete.";
+msg = "Bounded derivative regression for polynomial of degree "+degree+" complete.";
 disp(msg);
 end

@@ -2,7 +2,7 @@
 This is a set of MATLAB functions for performing polynomial regression with shape constraints. The currently supported shape constraints are monotonicity and convexity on a bounded interval.
 ## Prerequisites
 
-### MATLAB R2017b
+### MATLAB R2019a
 This project was developed in MATLAB R2019a. We do not guarantee the forward
 or backward compatibility to any other versions.
 

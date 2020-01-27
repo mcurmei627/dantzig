@@ -20,8 +20,8 @@ yalmip('clear');
 % in actual applications rescalling is necessary due to 
 % numerical problems
 tol = 0.001;
-inf_bound = min(features) - tol;
-sup_bound = max(features) + tol;
+inf_domain = min(features) - tol;
+sup_domain = max(features) + tol;
 
 %% PROBLEM SETUP: Define the parameters and decision variables
 
@@ -96,9 +96,9 @@ c_Q_help = c_coef_help*c_monomials;
 %% PROBLEM SETUP: Write the constraints
 F = [sos(m_Q_help), sos(m_Q_help)];
 % Add monotonicity constraints
-F = F+[sos(transpose(jacobian(p,x)).*monotone_profile - m_Q_help*transpose((x-inf_bound).*(sup_bound-x)))];
+F = F+[sos(transpose(jacobian(p,x)).*monotone_profile - m_Q_help*transpose((x-inf_domain).*(sup_domain-x)))];
 % Add convexity constraints
-F = F+[sos(y*hessian(p,x)*transpose(y).*convex_sign-(x-inf_bound).*(sup_bound-x)*c_Q_help)];
+F = F+[sos(y*hessian(p,x)*transpose(y).*convex_sign-(x-inf_domain).*(sup_domain-x)*c_Q_help)];
 
 %% SOS OPTIMIZATION: Fit the desired polynomial
 options = sdpsettings('verbose',2, 'solver', 'mosek');

@@ -81,7 +81,7 @@ F = [sos(Q_help)];
 F = F+[sos(y*hessian(p,x)*transpose(y).*convex_sign-(x-inf_domain).*(sup_domain-x)*Q_help)];
 
 %% SOS OPTIMIZATION: Fit the desired polynomial
-options = sdpsettings('verbose',2, 'solver', 'mosek');
+options = sdpsettings('verbose',0, 'solver', 'mosek');
 % The coefficients are the decision variables, putting them all in an array
 all_coef = [c;reshape(coef_help, k*length(monomials),1,[])];
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);

@@ -60,7 +60,7 @@ F = [sos(Q_help)];
 F = F+[sos(transpose(jacobian(p,x)).*monotone_profile -  Q_help*transpose((x-inf_bound).*(sup_bound-x)))];
 
 %% SOS OPTIMIZATION: Fit the desired polynomial
-options = sdpsettings('verbose',2, 'solver', 'mosek');
+options = sdpsettings('verbose',0, 'solver', 'mosek');
 all_coef = [c;reshape(coef_help, k*k*length(monomials),1,[])];
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
 

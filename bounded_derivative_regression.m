@@ -67,7 +67,7 @@ F = [sos(l_Q_help), sos(u_Q_help)];
 F = F+[sos(transpose(jacobian(p,x))- l_bound - l_Q_help*transpose((x-inf_domain).*(sup_domain-x)))];
 F = F+[sos(u_bound-transpose(jacobian(p,x))- u_Q_help*transpose((x-inf_domain).*(sup_domain-x)))];
 %% SOS OPTIMIZATION: Fit the desired polynomial
-options = sdpsettings('verbose',2, 'solver', 'mosek');
+options = sdpsettings('verbose',0, 'solver', 'mosek');
 all_coef = [c;reshape(l_coef_help, k*k*length(monomials),1,[]);reshape(u_coef_help, k*k*length(monomials),1,[])];
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
 

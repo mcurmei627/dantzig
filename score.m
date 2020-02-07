@@ -2,8 +2,8 @@ function [err_train,err_test] = score(algo,degree,features_train,...
                  response_train,features_test, response_test, varargin)
 %% Description
 % Outputs
-%   err_train := MSE on the training dataset
-%   err_test := MSE on the testing dataset
+%   err_train := RMSE on the training dataset
+%   err_test := RMSE on the testing dataset
 % Inputs
 %   algo := the regression algoritm - monotone, convex or unconstrained
 %   degree := degree of the polynomial
@@ -78,11 +78,11 @@ end
 switch algo   
     case {"monotone", "bounded_derivative", "convex", "monotone_convex"}
         % compute predicted responses for training and testing dataset
-        Y_hat_train = repmat(0, [N_train 1]);
+        Y_hat_train = zeros([N_train 1]);
         for i = 1:N_train
             Y_hat_train(i) = replace(p, x, features_train(i,:));
         end
-        Y_hat_test = repmat(0, [N_test 1]);
+        Y_hat_test = zeros([N_test 1]);
         for i = 1:N_test
             Y_hat_test(i) = replace(p, x, features_test(i,:));
         end     
@@ -100,11 +100,11 @@ end
 
 %% Compute the scores   
 % Average squared deviation in the training set
-err_train = value(transpose(Y_hat_train-response_train)*...
-                  (Y_hat_train-response_train))/N_train;
+err_train = sqrt(value(transpose(Y_hat_train-response_train)*...
+                  (Y_hat_train-response_train))/N_train);
 % Average squared deviation in the testing set
-err_test = value(transpose(Y_hat_test-response_test)*...
-                 (Y_hat_test-response_test))/N_test;
+err_test = sqrt(value(transpose(Y_hat_test-response_test)*...
+                 (Y_hat_test-response_test))/N_test);
 end
         
         

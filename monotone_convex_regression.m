@@ -94,19 +94,19 @@ c_coef_help = sdpvar(k, length(c_monomials));
 c_Q_help = c_coef_help*c_monomials;
 
 %% PROBLEM SETUP: Write the constraints
-F = [sos(m_Q_help), sos(m_Q_help)];
+F = [sos(m_Q_help), sos(c_Q_help)];
 % Add monotonicity constraints
 F = F+[sos(transpose(jacobian(p,x)).*monotone_profile - m_Q_help*transpose((x-inf_domain).*(sup_domain-x)))];
 % Add convexity constraints
 F = F+[sos(y*hessian(p,x)*transpose(y).*convex_sign-(x-inf_domain).*(sup_domain-x)*c_Q_help)];
 
 %% SOS OPTIMIZATION: Fit the desired polynomial
-options = sdpsettings('verbose',2, 'solver', 'mosek');
+options = sdpsettings('verbose',0, 'solver', 'mosek');
 % The coefficients are the decision variables, putting them all in an array
 all_coef = [c;reshape(c_coef_help, k*length(c_monomials),1,[]);reshape(m_coef_help, k*k*length(m_monomials),1,[])];
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
 
 %% Display message
 msg = "Monotone-convex regression for polynomial of degree "+degree+" complete.";
-disp(msg);
+%disp(msg);
 end

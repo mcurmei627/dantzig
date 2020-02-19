@@ -15,6 +15,14 @@ function [rmse_train_algo, rmse_train_uncs, rmse_test_algo, rmse_test_uncs, fig]
 %   k: number of features
 %   degree: degree of the polynomial regressed
 %   eps_arr: array of  noise scaling factors
+%   N_trials: number of trials for each epsilon value, in order to build
+%   confidence intervals
+%   varargin: optional argument; a sequence of the form:(or any subset of it)
+%                      'monotone_profile', ones(3,1),
+%                      'convex_sign', -1,
+%                      'l_bound', [-1, 2],
+%                      'u_bound', [3, 5]
+
 
 %% Initialize return variables
 N_eps=length(eps_arr);
@@ -28,16 +36,16 @@ for trial = 1:N_trials
     %% Generate synthetic data
     switch algo
         case 'monotone'
-            real_fun = @convex_fun;
+            real_fun = @monotone_fun;
             algo_abr = 'MPR';
         case 'bounded_derivative'
-            real_fun = @convex_fun;
+            real_fun = @bounded_derivative_fun;
             algo_abr = 'BDPR';
         case 'convex'
             real_fun = @convex_fun;
             algo_abr = 'CPR';
         case 'monotone_convex'
-            real_fun = @convex_fun;
+            real_fun = @monotone_convex_fun;
             algo_abr = 'MCPR';
         otherwise
             msg="Error: "+algo+" not found, choose between 'monotone' or 'convex'";
@@ -46,26 +54,25 @@ for trial = 1:N_trials
 
     % Create the features (generate k x N numbers)
     % and scale each feature between 0.5 and 2
-    % features = rand(N,k) * (2-0.5) + 0.5;
-    features = normrnd(0,1, [N, k])/3 + 2;
+    features = rand(N,k) * (2-0.5) + 0.5;
+    % features = normrnd(0,1, [N, k])/3 + 2;
 
     % Generate response variable (clean, no noise added)
     response_clean = real_fun(features);
     %% Split the  data set into training and testing
     % Split into test and train (note that we do not have a validation set)
     [idx_train, ~, idx_test]  = dividerand(N, 0.8, 0, 0.2);
-    response_train = response_clean(idx_train);
-    response_test = response_clean(idx_test);
+    features_train = features(idx_train,:);
+    features_test = features(idx_test,:);
 
     %% Compute the training and testing RMSE for chosen algorithm and unconstrained one
     for i = 1:N_eps
-        % add noise to the features variable
-        noise = eps_arr(i)*std(features).*normrnd(0,1, [N,k]);
-        features = features + noise;
-        % split into train and test
-        features_train = features(idx_train,:);
-        features_test = features(idx_test,:);
-
+        % add noise to the response variable
+        noise = eps_arr(i)*std(response_clean).*normrnd(0,1,[N,1]);
+        response_noise = response_clean + noise;
+        response_train = response_noise(idx_train);
+        response_test = response_noise(idx_test);
+        
         [rmse_train_algo(trial,i),rmse_test_algo(trial,i)] = ...
             score(algo,degree,features_train,response_train,...
                   features_test,response_test,varargin{:});

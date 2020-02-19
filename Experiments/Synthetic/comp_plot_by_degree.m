@@ -16,12 +16,19 @@ function [rmse_train_algo, rmse_train_uncs, rmse_test_algo, rmse_test_uncs, fig]
 %   d_min: min degree of the polynomial regressed
 %   d_max: max degree
 %   eps: noise scaling factor
+%   N_trials: number of trials for each degree, in order to build
+%   confidence intervals
+%   varargin: optional argument; a sequence of the form:(or any subset of it)
+%                      'monotone_profile', ones(3,1),
+%                      'convex_sign', -1,
+%                      'l_bound', [-1, 2],
+%                      'u_bound', [3, 5]
 
 %% Initialize return variables
 N_degrees=d_max-d_min+1;
 rmse_train_algo = zeros(N_trials, N_degrees);
 rmse_train_uncs = zeros(N_trials, N_degrees);
-rmse_test_algo = zeros(N_trials, N_degrees);
+rmse_test_algo = zeros(N_trials, N_degrees) + 1;
 rmse_test_uncs = zeros(N_trials, N_degrees);
 
 %% Run each trial
@@ -38,7 +45,7 @@ for trial = 1:N_trials
             real_fun = @convex_fun;
             algo_abr = 'CPR';
         case 'monotone_convex'
-            real_fun = @convex_fun;
+            real_fun = @monotone_convex_fun;
             algo_abr = 'MCPR';
         otherwise
             msg="Error: "+algo+" not found";
@@ -47,15 +54,15 @@ for trial = 1:N_trials
 
     % Create the features (generate k x N numbers)
     % and scale each feature between 0.5 and 2
-    % features = rand(N,k) * (2-0.5) + 0.5;
-    features = normrnd(0,1, [N, k])/3 + 2;
+    features = rand(N,k) * (2-0.5) + 0.5;
+    % features = normrnd(0,1, [N, k])/3 + 2;
 
     % Generate response variable (true function + error term)
-    response = real_fun(features);
+    response_clean = real_fun(features);
 
-    % Add gaussian noise to the features
-    noise = eps*std(features).*normrnd(0,1, [N,k]);
-    features = features + noise;
+    % Add gaussian noise to the response
+    noise = eps*std(response_clean).*normrnd(0,1,[N,1]);
+    response_noise = response_clean + noise;
 
     %% Split the  data set into training and testing
     % Split into test and train (note that we do not have a validation set)
@@ -64,15 +71,16 @@ for trial = 1:N_trials
     features_train = features(idx_train,:);
     features_test = features(idx_test,:);
 
-    response_train = response(idx_train);
-    response_test = response(idx_test);
+    response_train = response_noise(idx_train);
+    response_test = response_noise(idx_test);
 
     %% Compute the training and testing RMSE for chosen algorithm and unconstrained one
     for degree = d_min:d_max
-        [rmse_train_algo(trial, degree-d_min+1),rmse_test_algo(degree-d_min+1)] = ...
+        [rmse_train_algo(trial, degree-d_min+1),rmse_test_algo(trial, degree-d_min+1)] = ...
             score(algo,degree,features_train,response_train,...
                   features_test, response_test, varargin{:});
-        [rmse_train_uncs(trial, degree-d_min+1),rmse_test_uncs(degree-d_min+1)] = ...
+        
+        [rmse_train_uncs(trial, degree-d_min+1),rmse_test_uncs(trial, degree-d_min+1)] = ...
             score('unconstrained',degree,features_train,response_train,...
                   features_test, response_test);
     end

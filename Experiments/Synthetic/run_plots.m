@@ -32,3 +32,4 @@ for i = 1:N_eps
                              N_trials, 'l_bound', zeros(k,1))
     end
 end
+%% Projection plots

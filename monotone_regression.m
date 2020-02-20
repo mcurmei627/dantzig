@@ -46,7 +46,8 @@ h = diff_bulk*diff_bulk';
 %% PROBLEM SETUP: Define the decision variables used in the constraints
 
 % Create the monomials used in the constraints
-monomials = monolist(x, degree-2); % degree-2 because the other decision polynomials have degree degreemono-2
+monomials = monolist(x, degree-2); % degree-2 because the other decision 
+                                   % polynomials have degree-2
 
 % Define the coefficients of the matrix of helper polynomials
 coef_help = sdpvar(k*k, length(monomials));
@@ -57,7 +58,8 @@ Q_help = reshape(Q_help, k, k, []);
 
 %% PROBLEM SETUP: Write the constraints
 F = [sos(Q_help)];
-F = F+[sos(transpose(jacobian(p,x)).*monotone_profile -  Q_help*transpose((x-inf_bound).*(sup_bound-x)))];
+F = F+[sos(transpose(jacobian(p,x)).*monotone_profile - ...
+       Q_help*transpose((x-inf_bound).*(sup_bound-x)))];
 
 %% SOS OPTIMIZATION: Fit the desired polynomial
 options = sdpsettings('verbose',0, 'solver', 'mosek');

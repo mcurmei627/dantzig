@@ -45,25 +45,46 @@ h = diff_bulk*diff_bulk';
 
 %% PROBLEM SETUP: Define the decision variables used in the constraints
 
+even_degree = mod(degree,2)==0;
+
 % Create the monomials used in the constraints
-monomials = monolist(x, degree-2); % degree-2 because the other decision 
-                                   % polynomials have degree-2
+if even_degree  % from Lemma2
+    monomials = monolist(x, degree-2);
+    
+    % Define the coefficients of the matrix of helper polynomials
+    coef_help_sup = sdpvar(k*k, length(monomials));
+    coef_help_inf = sdpvar(k*k, length(monomials));
 
-% Define the coefficients of the matrix of helper polynomials
-coef_help = sdpvar(k*k, length(monomials));
+    % Create the matrix of helper polynomials 
+    Q_help_sup = coef_help_sup*monomials;
+    Q_help_sup = reshape(Q_help_sup, k, k, []);
+    Q_help_inf = coef_help_inf*monomials;
+    Q_help_inf = reshape(Q_help_inf, k, k, []);
+    all_coef = [c;reshape(coef_help_inf, k*k*length(monomials),1,[]);...
+                  reshape(coef_help_sup, k*k*length(monomials),1,[])];
+else    
+    monomials = monolist(x, degree-3);
+    
+    % Define the coefficients of the matrix of helper polynomials
+    coef_help = sdpvar(k*k, length(monomials));
 
-% Create the matrix of helper polynomials 
-Q_help = coef_help*monomials;
-Q_help = reshape(Q_help, k, k, []);
-
+    % Create the matrix of helper polynomials 
+    Q_help = coef_help*monomials;
+    Q_help = reshape(Q_help, k, k, []);
+    all_coef = [c;reshape(coef_help, k*k*length(monomials),1,[])];
+end
 %% PROBLEM SETUP: Write the constraints
-F = [sos(Q_help)];
-F = F+[sos(transpose(jacobian(p,x)).*monotone_profile - ...
-       Q_help*transpose((x-inf_bound).*(sup_bound-x)))];
-
+if even_degree
+    F = [sos(Q_help_inf), sos(Q_help_sup)];
+    F = F+[sos(transpose(jacobian(p,x)).*monotone_profile - ...
+       Q_help_inf*transpose(x-inf_bound)- Q_help_sup*transpose(sup_bound-x))];
+else
+    F = [sos(Q_help)];
+    F = F+[sos(transpose(jacobian(p,x)).*monotone_profile - ...
+        Q_help*transpose((x-inf_bound).*(sup_bound-x)))];
+end
 %% SOS OPTIMIZATION: Fit the desired polynomial
-options = sdpsettings('verbose',0, 'solver', 'mosek');
-all_coef = [c;reshape(coef_help, k*k*length(monomials),1,[])];
+options = sdpsettings('verbose',0, 'solver', 'mosek');  
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
 
 %% Display message

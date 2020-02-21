@@ -1,27 +1,26 @@
-function fig = comp_projection_plot(algo,N,k,eps,degree,varargin)
+function fig = comp_projection_plot(algo,N,k,degree,eps,varargin)
 %% Description
 % This function produces the plots for the comparison between the RMSE of
 % chosen algorithm and unconstrained polynomial regression at a certain
 % degree for varying noise level eps. It also returns the array
 % of RMSE for training and testing for both algorithms
 % Outputs:
-%   fig := matlab figure with 4 graphs
-%   rmse_train_algo = array of rmse for the choosen algorithm on the training
-%                    dataset when fitting polynomials of different degrees
+%   fig := matlab figure with 3 graphs, the projection of the original
+%   function, the projection of the fitted shape constrained polynomial
+%   function and the projection of unconstrained polynomial 
 % Inputs:
-%   algo: the regression algoritm - monotone or convex
+%   algo: the regression algoritm - monotone,convex, monotone_convex or
+%   bounded_derivative
 %   N: number of examples
 %   k: number of features
 %   degree: degree of the polynomial regressed
+%   eps: proportion of additive noise to the response
 %   varargin: optional argument; a sequence of the form:(or any subset of it)
 %                      'monotone_profile', ones(3,1),
 %                      'convex_sign', -1,
 %                      'l_bound', [-1, 2],
 %                      'u_bound', [3, 5]
 
-
-
- 
 %% Generate synthetic data
 switch algo
     case 'monotone'
@@ -75,12 +74,15 @@ c_map = lines(2);
 hold on
 
 % plot average values for RMSE
-p1 = plot(proj_features(:,1), proj_response,':', 'LineWidth', 2, 'Color','black');
-p2 = plot(proj_features(:,1), uncs_response,'-', 'LineWidth', 2, 'Color',c_map(1,:));
-p3 = plot(proj_features(:,1), algo_response,'-', 'LineWidth', 2, 'Color',c_map(2,:));
+[sample_x, sample_idx] = datasample(proj_features(:,1), 50);
+sample_y = proj_response(sample_idx) + noise(sample_idx);
+p1 = scatter(sample_x, sample_y,'MarkerEdgeColor', [0.5 0.5 0.5]);
+p2 = plot(proj_features(:,1), proj_response,':', 'LineWidth', 2, 'Color','black');
+p3 = plot(proj_features(:,1), uncs_response,'-', 'LineWidth', 2, 'Color',c_map(1,:));
+p4 = plot(proj_features(:,1), algo_response,'-', 'LineWidth', 2, 'Color',c_map(2,:));
 
-lgd = legend([p1 p2 p3], 'Original function','UPR projection', ...
-             strcat(algo_abr, ' projection'));
+lgd = legend([p1 p2 p3 p4], 'Samples', 'Original function',...
+            'UPR projection',strcat(algo_abr, ' projection'));
 lgd.Title.String = sprintf('degree = %d', degree);
 set(lgd, 'Location', 'Best')
 xlabel('Feature_0');

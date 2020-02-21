@@ -115,7 +115,7 @@ p4 = plot(eps_arr, mean_test_algo,'-', 'LineWidth', 2, 'Color',c_map(2,:));
 
 lgd = legend([p1 p2 p3 p4], 'UPR train','UPR test', ...
              strcat(algo_abr, ' train'), strcat(algo_abr, ' test'));
-lgd.Title.String = sprintf('degree = %d', degree);
+lgd.Title.String = sprintf('degree = %d; N = %d', degree, N);
 set(lgd, 'Location', 'Best')
 xlabel(['Value of ' char(949)]); % char(949) is epsilon
 ylabel('RMSE') 
@@ -124,7 +124,8 @@ grid on
 hold off
 
 % save the figure and a PNG plot 
-name = sprintf("%svsUPR_N%dk%d%deps%.2f-%.2f",algo_abr,N,k,degree,eps_arr(1), eps_arr(N_eps));
+name = sprintf("noise_%s_N%d_k%d_d%d_eps%.2f-%.2f",algo_abr,N,k,degree,...
+                eps_arr(1), eps_arr(N_eps));
 fig_name = name + '.fig';
 png_name = name + '.png';
 wd = pwd;

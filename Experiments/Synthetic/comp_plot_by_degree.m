@@ -131,7 +131,7 @@ grid on
 hold off
 
 % save the figure and a PNG plot 
-name = sprintf("%svsUPR_N%dk%ddmin%ddmax%deps%.2f",algo_abr,N,k,d_min,d_max,eps);
+name = sprintf("%svsUPR_N%d_k%d_dmin%d_dmax%d_eps%.2f",algo_abr,N,k,d_min,d_max,eps);
 fig_name = name + '.fig';
 png_name = name + '.png';
 wd = pwd;

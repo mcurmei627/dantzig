@@ -17,8 +17,8 @@ function [err_train,err_test] = score(algo,degree,features_train,...
 %                      'l_bound', [-1, 2],
 %                      'u_bound', [3, 5]
 
-%% Parse the input
-[~, k] = size(features_train);  
+%% Parse the input  
+[~, k] = size(features_train);
 N_train = length(response_train);
 N_test = length(response_test);
 
@@ -47,36 +47,13 @@ for pair = reshape(varargin,2,[]) % pair is {arg; value}
    end
 end
 
-%% Fit the desired model
-switch algo
-    case "monotone"
-        % fit to the training data
-        [p,x] = monotone_regression(degree,...
-                                    features_train,response_train,...
-                                    arg_struct.monotone_profile);
-    case "bounded_derivative"
-        % fit to the training data
-        [p,x] = bounded_derivative_regression(degree,...
-                                              features_train,...
-                                              response_train,...
-                                              arg_struct.l_bound,...
-                                              arg_struct.u_bound);                                       
-    case "convex"
-        % fit to the training data
-        [p,x] = convex_regression(degree,...
-                                  features_train,response_train,...
-                                  arg_struct.convex_sign);   
-    case "monotone_convex"
-        % fit to the training data
-        [p,x] = monotone_convex_regression(degree,...
-                                           features_train,response_train,...
-                                           arg_struct.monotone_profile, ...
-                                           arg_struct.convex_sign);            
-end
-
 %% Compute the predictions
 switch algo   
     case {"monotone", "bounded_derivative", "convex", "monotone_convex"}
+        % fit the model
+        [p,x] = shape_constrained_regression(algo,degree,features_train,...
+                 response_train, varargin{:});
+             
         % compute predicted responses for training and testing dataset
         Y_hat_train = zeros([N_train 1]);
         for i = 1:N_train

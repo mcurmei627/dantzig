@@ -83,7 +83,7 @@ p4 = plot(proj_features(:,1), algo_response,'-', 'LineWidth', 2, 'Color',c_map(2
 
 lgd = legend([p1 p2 p3 p4], 'Samples', 'Original function',...
             'UPR projection',strcat(algo_abr, ' projection'));
-lgd.Title.String = sprintf('degree = %d', degree);
+lgd.Title.String = sprintf('degree = %d; N = %d', degree, N);
 set(lgd, 'Location', 'Best')
 xlabel('Feature_0');
 ylabel('Response') 
@@ -92,7 +92,7 @@ grid on
 hold off
 
 % save the figure and a PNG plot 
-name = sprintf("proj_%s_N%d_k%d_d%d_eps%.2f",algo_abr,degree,eps);
+name = sprintf("proj_%s_N%d_k%d_d%d_eps%.2f",algo_abr, N, k, degree,eps);
 fig_name = name + '.fig';
 png_name = name + '.png';
 wd = pwd;

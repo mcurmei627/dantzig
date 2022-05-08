@@ -1,7 +1,8 @@
-function mdl = unconstrained_regression(degree,features,response)
+function [mdl, runtime] = unconstrained_regression(degree,features,response)
 %% Unconstrained polynomial regression
 % Outputs
 %   mdl := model from fitlm customized for multivariate polynomial regression
+%   runtime : training runtime
 % Inputs
 %   degree := the degree  of the decision polynomial 
 %   features := feature variable data used for training
@@ -17,7 +18,9 @@ function mdl = unconstrained_regression(degree,features,response)
 mdl_spec = strcat('poly', repmat(int2str(degree),1, k));
 
 %%
+tic;
 mdl = fitlm(features,response',mdl_spec);
+runtime = toc;
 %% Display message
 msg = "Unconstrained regression for polynomial of degree "+degree+" complete.";
 disp(msg);

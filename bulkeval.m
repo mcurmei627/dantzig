@@ -4,6 +4,7 @@ function F = bulkeval(p,x,X)
 F = [];
 B = getbase(p);
 [M,vartype] = yalmip('monomtable');
+
 xvar = getvariables(x);
 pvar = getvariables(p);
 for i = 1:size(X,2)

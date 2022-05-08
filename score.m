@@ -1,9 +1,12 @@
-function [err_train,err_test] = score(algo,degree,features_train,...
-                 response_train,features_test, response_test, varargin)
+function [err_train,err_test, runtime_train, runtime_predict] = ...
+    score(algo,degree,features_train,response_train,features_test, response_test, varargin)
 %% Description
 % Outputs
 %   err_train := RMSE on the training dataset
 %   err_test := RMSE on the testing dataset
+%   runtime_train := elapsed time in seconds to train algos on the train data
+%   runtime_predict := elapsed time in seconds to predict algo on train
+%   data
 % Inputs
 %   algo := the regression algoritm - monotone, convex or unconstrained
 %   degree := degree of the polynomial
@@ -51,22 +54,26 @@ end
 switch algo   
     case {"monotone", "bounded_derivative", "convex", "monotone_convex"}
         % fit the model
-        [p,x] = shape_constrained_regression(algo,degree,features_train,...
+        [p,x, aux_out] = shape_constrained_regression(algo,degree,features_train,...
                  response_train, varargin{:});
              
         % compute predicted responses for training and testing dataset
+        tic;
         Y_hat_train = zeros([N_train 1]);
         for i = 1:N_train
             Y_hat_train(i) = replace(p, x, features_train(i,:));
         end
+        runtime_predict = toc;
         Y_hat_test = zeros([N_test 1]);
         for i = 1:N_test
             Y_hat_test(i) = replace(p, x, features_test(i,:));
         end     
                                      
     case "unconstrained"
-        mdl = unconstrained_regression(degree,features_train,response_train);
+        [mdl, runtime_train] = unconstrained_regression(degree,features_train,response_train);
+        tic;
         Y_hat_train = mdl.predict(features_train);
+        runtime_predict = toc;
         Y_hat_test = mdl.predict(features_test);
         
     otherwise
@@ -74,7 +81,8 @@ switch algo
             "'bounded_derivative', 'convex', 'monotone_convex' or 'unconstrained'";
         error(msg);
 end
-
+msg = "Prediction Runtime: " + runtime_predict;
+disp(msg);
 %% Compute the scores   
 % Average squared deviation in the training set
 err_train = sqrt(value(transpose(Y_hat_train-response_train)*...

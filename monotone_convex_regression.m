@@ -1,4 +1,4 @@
-function [p,x] = monotone_convex_regression(degree,features,response,monotone_profile,convex_sign)
+function [p,x, aux_out] = monotone_convex_regression(degree,features,response,monotone_profile,convex_sign)
 %% Description 
 % Outputs
 %   p := decision polynomial
@@ -26,7 +26,7 @@ sup_domain = max(features) + tol;
 %% PROBLEM SETUP: Define the parameters and decision variables
 
 %k - number of features
-[~, k] = size(features); 
+[N, k] = size(features); 
 x=sdpvar(1,k);
 
 % Define the main polynomial to be learned
@@ -59,7 +59,7 @@ diff_bulk = peval_bulk - response'; % <- computes the difference between
                                     %    the function value at the feature
                                     %    input and the response, (as a
                                     %    function of c)
-h = diff_bulk*diff_bulk'; % <- h is the minimization objective, the sum of 
+h = norm(diff_bulk); % <- h is the minimization objective, the sum of 
                           %    squared errors
 
 %% PROBLEM SETUP: Define the decision variables used in the constraints
@@ -94,6 +94,7 @@ c_coef_help = sdpvar(k, length(c_monomials));
 c_Q_help = c_coef_help*c_monomials;
 
 %% PROBLEM SETUP: Write the constraints
+t0 = tic();
 F = [sos(m_Q_help), sos(c_Q_help)];
 % Add monotonicity constraints
 F = F+[sos(transpose(jacobian(p,x)).*monotone_profile - m_Q_help*transpose((x-inf_domain).*(sup_domain-x)))];
@@ -104,9 +105,18 @@ F = F+[sos(y*hessian(p,x)*transpose(y).*convex_sign-(x-inf_domain).*(sup_domain-
 options = sdpsettings('verbose',0, 'solver', 'mosek');
 % The coefficients are the decision variables, putting them all in an array
 all_coef = [c;reshape(c_coef_help, k*length(c_monomials),1,[]);reshape(m_coef_help, k*k*length(m_monomials),1,[])];
+setup_time = toc(t0);
+msg = "Setup time: " + setup_time + " seconds.";
+disp(msg);
+t1 = tic();
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
+optimization_time = toc(t1);
+msg = "Optimization runtime: " + optimization_time + " seconds.";
+disp(msg);
+
 
 %% Display message
 msg = "Monotone-convex regression for polynomial of degree "+degree+" complete.";
-%disp(msg);
+aux_out = struct('setup_time', setup_time, 'optimization_time',...
+    optimization_time, 'solver_time', sol.('solvertime'), 'train_rmse', sqrt(value(h)^2/N));
 end

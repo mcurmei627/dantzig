@@ -85,31 +85,37 @@ diff_bulk = peval_bulk - response'; % <- computes the difference between
 %h = diff_bulk*diff_bulk'; % <- h is the minimization objective, the sum of 
                           %    squared errors
 h = norm(diff_bulk,2);
-%% PROBLEM SETUP: Define the decision variables used in the constraints
 
+%% PROBLEM SETUP: Define the decision variables used in the constraints
 % Create helper free variable
 y=sdpvar(1,k);
-
 % Create the monomials of the helper polynomials used in the constraints
-r = arg_struct.('helper_degree');
-mono_degree = cat(2, repelem(2*r-2, k), repelem(2, k));
-% (the max degree associated with the helper variable is 2)
-monomials = monolist([x y], mono_degree);
-
+%2r= degree of gi* Si
+%2r-2 = degree of Si
+%r = degree in x of monomials in w(x,y)
+two.r = arg_struct.('helper_degree'); %this is 2r
+%constructing the monomial list for the polynomial y^T* Si *y. Should
+%involve x of degree 2r-2 and y of degree 2
+y=sdpvar(1,k);
+wrminus1=[];
+for i=1:k
+    wrminus1=[wrminus1 y(i).*monolist([x],(two.r-2)/2)];
+end
+w2rminus2=unique(reshape(wrminus1*wrminus1',[],1));
 % Define the coefficients of the array of helper polynomials
-coef_help = sdpvar(k, length(monomials));
-
-% Create an array of helper polynomials 
-Q_help = coef_help*monomials;
+coef_help = sdpvar(k, length(w2rminus2));
+% Create an array of helper polynomials
+Q_help = coef_help*w2rminus2;
 
 %% PROBLEM SETUP: Write the constraints
 F = [sos(Q_help)];
 F = F+[sos(y*hessian(p,x)*transpose(y).*convex_sign-(x-inf_domain).*(sup_domain-x)*Q_help)];
 
+
 %% SOS OPTIMIZATION: Fit the desired polynomial
-options = sdpsettings('verbose',0, 'solver', arg_struct.('solver'));
+options = sdpsettings('verbose',0, 'solver', 'mosek');
 % The coefficients are the decision variables, putting them all in an array
-all_coef = [c;reshape(coef_help, k*length(monomials),1,[])];
+all_coef = [c;reshape(coef_help, k*length(w2rminus2),1,[])];
 setup_time = toc(t0);
 msg = "Setup time: " + setup_time + " seconds.";
 disp(msg);
@@ -117,14 +123,11 @@ t1 = tic();
 [sol,m,B,residual]=solvesos(F, h, options, all_coef);
 optimization_time = toc(t1);
 msg = "Optimization runtime: " + optimization_time + " seconds.";
-%disp(msg);
-
+disp(msg);
 %% Display message
 msg = "Convex regression for polynomial of degree "+d+ ...
     "and helper degree " + arg_struct.('helper_degree') + " complete.";
 disp(msg);
-
-% get the min eigen value
 l = length(B);
 current_monomials = m{l};
 keep_idx = [];
@@ -132,16 +135,14 @@ for i = 1:length(current_monomials)
     degree_x = sum(degree(current_monomials(i), x));
     degree_y = sum(degree(current_monomials(i), y));
     if degree_y == 1
-        if degree_x <= r
+        if degree_x <= ceil((d-2)/2)
             keep_idx = [keep_idx, i];
         end
     end
 end
-
 gram_matrix = B{l};
 gram_matrix = gram_matrix(keep_idx, keep_idx);
-
 aux_out = struct('setup_time', setup_time, 'optimization_time',...
     optimization_time, 'solver_time', sol.('solvertime'), ...
-    'train_rmse', sqrt(value(h)^2/N), 'Q', gram_matrix);
+    'train_rmse', sqrt(value(h)^2/N), 'Q', gram_matrix, 'error',sol.problem);
 end
